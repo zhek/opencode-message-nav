@@ -5,8 +5,9 @@
 `session.message.user.previous` / `session.message.user.next` commands. Mouse-driven: no keybinds, no modal mode.
 Repo is greenfield: no `package.json` or source yet.
 
-Identity is fixed: package and repository `opencode-message-nav`, plugin id `opencode-message-nav`, README H1 exactly
-`opencode-message-nav`. The id is not the reserved `opencode.` namespace (the dot, as in `opencode.warming`) and does not
+Identity is fixed: package and repository `opencode-message-nav`, plugin id `opencode-message-nav`, README H1
+`OpenCode Message Nav`. The package name stays the identifier in npm, `cli.json` and logs; the H1 is only the
+human-readable title. The id is not the reserved `opencode.` namespace (the dot, as in `opencode.warming`) and does not
 match `-opencode.*` wildcards.
 
 ## Non-negotiable rules
@@ -147,6 +148,7 @@ Rules:
 - Official V2 docs only: `https://opencode.ai/v2/docs/`. The V1 paths (`opencode.ai/docs/`) describe the old API — avoid.
 - Plugin guides: `/v2/docs/build/plugins` (core), `/v2/docs/build/plugins/cli` (TUI slots and context),
   `/v2/docs/cli/plugins` (loading TUI-only packages) and `/v2/docs/cli/keybinds` (command IDs).
-- `README.md` starts with `# opencode-message-nav` exactly — the npm package name, no brand and no emoji — followed by
-  one sentence: what the plugin adds and where. It is the only user-facing document.
+- `README.md` starts with `# OpenCode Message Nav` — a human-readable title, no emoji — followed by one sentence: what
+  the plugin adds and where. The npm package name stays in the badges, install snippet and `package.json`. It is the
+  only user-facing document.
 - `README.md` is published on npm, so every link and image is a full `https://…` URL, including the license.

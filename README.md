@@ -1,4 +1,8 @@
-# opencode-message-nav
+# OpenCode Message Nav
+
+[![npm version](https://img.shields.io/npm/v/opencode-message-nav)](https://www.npmjs.com/package/opencode-message-nav)
+[![License: MIT](https://img.shields.io/npm/l/opencode-message-nav)](https://github.com/zhek/opencode-message-nav/blob/main/LICENSE)
+[![OpenCode V2](https://img.shields.io/badge/OpenCode-V2-5b8def)](https://opencode.ai/v2/docs/)
 
 Prev/Next buttons under the “Jump to latest ↓” row that move quickly between
 user messages in the OpenCode TUI. Mouse-driven, no keybinds, no modal mode.
