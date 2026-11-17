@@ -3,7 +3,8 @@
 `opencode-message-nav` — an OpenCode **V2 TUI-only plugin** (TypeScript, Bun for tests, npm for distribution). It puts
 `Prev ↑` and `Next ↓` under the `Jump to latest ↓` row and dispatches the built-in
 `session.message.user.previous` / `session.message.user.next` commands. Mouse-driven: no keybinds, no modal mode.
-Repo is greenfield: no `package.json` or source yet.
+The implementation is one entrypoint, `src/tui.tsx`, covered by `test/tui.test.tsx`; `package.json` declares only the
+`./tui` export.
 
 Identity is fixed: package and repository `opencode-message-nav`, plugin id `opencode-message-nav`, README H1
 `OpenCode Message Nav`. The package name stays the identifier in npm, `cli.json` and logs; the H1 is only the
@@ -17,8 +18,8 @@ match `-opencode.*` wildcards.
 - **Definition of done.** `bun test` and `bunx tsc --noEmit` pass, new behaviour has a test, and a user-visible change
   updates `README.md` and `CHANGELOG.md` in the same commit. Documentation is part of the task, not a follow-up. A
   change with nothing for the user to notice — `chore`, `docs`, `refactor`, test work — does not touch `CHANGELOG.md`.
-- **Everything is English.** Code, identifiers, file names, `README.md`, `CHANGELOG.md`. There is no `README.ru.md` and
-  no `docs/` tree; `README.md` is the only user-facing document.
+- **Everything is English.** Code, identifiers, file names, `README.md`, `CHANGELOG.md`, `SECURITY.md`. There is no
+  `README.ru.md` and no `docs/` tree; `README.md` is the product document and `SECURITY.md` the security policy.
 - **README links are absolute.** `README.md` is published on npm and rendered outside this tree, so every Markdown link
   and image in it MUST be a full `https://…` URL, including the license. A relative `LICENSE` link is broken there.
 - **Changelog first, versions later.** An ordinary PR never touches the version. A user-visible change is added to
@@ -34,6 +35,8 @@ match `-opencode.*` wildcards.
   the convention beats a prettier word. The branch name is the only marker: this project has no GitHub labels, and a rule
   that names one cannot be checked from the files. Anything a release PR leaves behind in `Unreleased` silently ships with
   the next release, which is the cost of a partial release PR.
+- **The package starts at `0.0.0`.** That is a placeholder until the first release PR sets the published version; do not
+  bump it in a feature or fix PR.
 - **Write `CHANGELOG.md` and `README.md` from the user's side.** What changed in behaviour, what became configurable,
   what stopped working. Implementation detail — function and module names, how dispatch works, which slot is used — does
   not belong in a document a user reads; put it in code comments or the PR description. The test: if a line cannot be
@@ -55,8 +58,12 @@ bun test test/tui.test.tsx    # single file
 bunx tsc --noEmit             # typecheck
 ```
 
-The runner is **Bun**, not Node. Rendering tests use `testRender` and `captureCharFrame` from `@opentui/solid`, which sit
-on OpenTUI native modules and do not run under `node --test` at all. Do not "fix" such a test by switching runners.
+The runner is **Bun**, not Node. Rendering tests use `testRender` from `@opentui/solid`; its setup provides
+`captureCharFrame`, `captureSpans` and `mockMouse`. They sit on OpenTUI native modules and do not run under `node --test`
+at all. Do not "fix" such a test by switching runners.
+
+`test/preload.ts` routes `solid-js` to the client runtime and `bunfig.toml` loads it for every test. Without it, effects
+never run and rendering tests pass against stale frames; do not remove it.
 
 Write the test next to the behaviour it protects: a slot render asserts both labels, a click test stubs
 `context.keymap.dispatch` and asserts the exact command id, a hover test asserts the theme-token change.
@@ -64,8 +71,8 @@ Write the test next to the behaviour it protects: a slot render asserts both lab
 Before a release, verify the packed tarball, not only the sources: `bun pm pack`, unpack it into a temporary project's
 `node_modules`, add that directory to `plugins` in `cli.json` (or pass it through `OPENCODE_CLI_CONFIG_CONTENT`), and run
 `opencode --standalone --print-logs --log-level debug`. Expect `loading plugin …`, `entrypoint=…/src/tui.tsx`,
-`plugin=opencode-message-nav`, and no `Cannot find package 'react'`. `bun test` does not cover this — it loads sources from the
-repo, where `tsconfig` is read.
+`plugin=opencode-message-nav`, and no `Cannot find package 'react'`. `bun test` does not cover this — it loads sources
+from the repo, where `tsconfig` is read.
 
 ## No build step — do not add one
 
@@ -82,7 +89,7 @@ failed to load plugin ... Cannot find package '@opencode/plugin'
 Verify a change actually loaded, rather than assuming:
 
 ```bash
-opencode plugin list          # expects a row with SOURCE = this repo's path
+opencode plugin list          # expects SOURCE = this repo's path (a local TUI-only ID may be "-")
 opencode --standalone --print-logs --log-level debug 2>&1 | grep -i "loading plugin\|failed to load"
 ```
 
@@ -109,14 +116,17 @@ reason to restart, not a config edit.
 - Every `.tsx` with JSX starts with `/** @jsxImportSource @opentui/solid */`. OpenCode compiles a package installed into
   `node_modules` with the default JSX runtime and ignores the package's `tsconfig.json`, so without the pragma loading
   fails with `Cannot find package 'react'`. That is the price of shipping sources with no build step.
+- Plugin JSX is compiled with static props, not reactive prop getters: a signal read inside a JSX prop is evaluated once.
+  Write reactive renderable properties in a `createEffect` (the hover colour does this) and call
+  `context.renderer.requestRender()`.
 - `@opencode/plugin` is a `dependency`; **`@opentui/core`, `@opentui/solid`, and `solid-js` are `peerDependencies`**
   (only if JSX is rendered). Getting this wrong yields runtime resolution failures in the TUI, not build errors.
 - CLI plugins are loaded via **`cli.json`** (`~/.config/opencode/cli.json`) to stay active against remote servers. There is
   **no project-local `cli.json`** — CLI preferences are global-only, so local overrides do not exist for this file.
 - `setup(ctx)` may return a cleanup function. Event subscriptions (`ctx.data.on` / `ctx.data.listen`) must be aborted or
-  unsubscribed there, or they leak across plugin reloads.
-- `ctx.keymap.layer(...)` factories must be **pure**. Layers are torn down when the plugin reloads, is disabled, or the
-  component that created them is disposed — do not rely on layer state persisting.
+  unsubscribed there, and this plugin returns the `session.composer.top` slot's unregister function from `setup`.
+- If a keymap layer is ever added, its factory must be **pure**. Layers are torn down when the plugin reloads, is
+  disabled, or the component that created them is disposed — do not rely on layer state persisting.
 
 ## Git conventions
 
@@ -142,6 +152,8 @@ Rules:
 - **Documentation follows the change.** When a change is user-visible, `README.md` and `CHANGELOG.md` are updated in the
   same commit as the behaviour they describe; a docs-only edit may touch either alone.
 - **Squash-merge** the PR into `main`; the PR title becomes the commit message.
+- **Use the PR template.** Pick `feature.md`, `bugfix.md`, `maintenance.md` or `release.md` in
+  `.github/PULL_REQUEST_TEMPLATE/`.
 
 ## Docs
 
@@ -150,5 +162,5 @@ Rules:
   `/v2/docs/cli/plugins` (loading TUI-only packages) and `/v2/docs/cli/keybinds` (command IDs).
 - `README.md` starts with `# OpenCode Message Nav` — a human-readable title, no emoji — followed by one sentence: what
   the plugin adds and where. The npm package name stays in the badges, install snippet and `package.json`. It is the
-  only user-facing document.
+  main product document; `SECURITY.md` holds the security policy.
 - `README.md` is published on npm, so every link and image is a full `https://…` URL, including the license.
