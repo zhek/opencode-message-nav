@@ -1,0 +1,51 @@
+{
+  "name": "opencode-message-nav",
+  "version": "0.0.0",
+  "description": "Prev/Next buttons under the Jump to latest row for moving quickly between user messages in the OpenCode TUI",
+  "license": "MIT",
+  "author": "Evgeniy Arapov (https://github.com/zhek)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhek/opencode-message-nav.git"
+  },
+  "homepage": "https://github.com/zhek/opencode-message-nav#readme",
+  "bugs": {
+    "url": "https://github.com/zhek/opencode-message-nav/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "tui",
+    "navigation",
+    "messages"
+  ],
+  "type": "module",
+  "exports": {
+    "./tui": "./src/tui.tsx"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.0.28"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.6.4",
+    "@opentui/solid": ">=0.6.4",
+    "solid-js": ">=1.9.0"
+  },
+  "devDependencies": {
+    "@opentui/core": "^0.6.4",
+    "@opentui/solid": "^0.6.4",
+    "@types/bun": "^1.4.3",
+    "solid-js": "1.9.12",
+    "typescript": "^5.9.3"
+  }
+}
