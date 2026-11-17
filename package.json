@@ -1,6 +1,6 @@
 {
   "name": "opencode-message-nav",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Prev/Next buttons under the Jump to latest row for moving quickly between user messages in the OpenCode TUI",
   "license": "MIT",
   "author": "Evgeniy Arapov (https://github.com/zhek)",
